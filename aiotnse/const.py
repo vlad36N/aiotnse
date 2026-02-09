@@ -14,22 +14,50 @@ LOG_LEVELS = {
     3: logging.DEBUG,
 }
 
-DEFAULT_BASE_URL: Final = "https://rest.tns-e.ru"
-DEFAULT_API_VERSION: Final = "1.69"
-DEFAULT_HASH: Final = "958fdc9525875bb8ef89e5c0bda3ebc60b95040e"
-DEFAULT_USER_AGENT: Final = "okhttp/3.7.0"
-DEFAULT_ACCOUNT_NUMBERS: Final = 12
+CLIENT_SESSION_LIFETIME = 525600
+CLIENT_LONG_LIVE_SESSION_LIFETIME = 365
 
-REGIONS: Final[dict[str, str]] = {
-    "58": "penza",
-    "76": "yar",
-    "36": "voronezh",
-    "53": "novgorod",
-    "10": "karelia",
-    "23": "kuban",
-    "93": "kuban",
-    "12": "mari-el",
-    "52": "nn",
-    "71": "tula",
-    "61": "rostov",
+DEFAULT_HOST = "https://rest.tns-e.ru"
+DEFAULT_ENDPOINT = f"https://{DEFAULT_HOST}/abr-lka-backend"
+DEFAULT_ORIGIN = f"https://{DEFAULT_HOST}"
+DEFAULT_REFERER = f"https://{DEFAULT_HOST}/"
+DEFAULT_MOBILE_USER_AGENT = "Dart/2.19 (dart:io)"
+DEFAULT_MOBILE_BROWSER = "App"
+CLOCK_OUT_OF_SYNC_MAX_SEC = 20
+HEADER_TOKEN: Final = "token"
+
+MOBILE_APP_NAME = "mobile"
+DESKTOP_APP_NAME = "desktop"
+APP_VERSION = {
+    MOBILE_APP_NAME: "7.5.18",
+    DESKTOP_APP_NAME: "7.5.18"
 }
+DEFAULT_DEVICE_INFO = {
+    "appName": "mobile",
+    "appVersion": APP_VERSION[MOBILE_APP_NAME],
+    "browser": DEFAULT_MOBILE_BROWSER,
+    "device": "Samsung Galaxy S10",
+    "screenResolution": "384x592",
+    "system": "Android"
+}
+ATTR_ERROR = "error"
+ATTR_OK = "ok"
+ATTR_DATA = "data"
+ATTR_VARIABLES = "variables"
+ATTR_QUERY = "query"
+ATTR_OPERATION_NAME = "operationName"
+ATTR_LSPU_ID = 'lspuId'
+ATTR_ELS_ID = "elsId"
+ATTR_EXPIRES_AT = "expires_at"
+ATTR_TOKEN = 'token'
+ATTR_BROWSER = "browser"
+ATTR_SYSTEM = "system"
+ATTR_SCREEN_RESOLUTION = "screenResolution"
+ATTR_DEVICE = "device"
+ATTR_APP_VERSION = "appVersion"
+ATTR_APP_NAME = "appName"
+ATTR_DEVICE_INFO = 'deviceInfo'
+ATTR_DATE_ISO_SHORT = 'dateIsoShort'
+ATTR_EMAIL = 'email'
+ATTR_IS_ELS = 'isEls'
+ATTR_ID = 'id'
