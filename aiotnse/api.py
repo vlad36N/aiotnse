@@ -1,111 +1,93 @@
 """TNS-Energo API wrapper."""
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, date
-from typing import Any, Union, Final
+from typing import Any
 
-from aiohttp import hdrs, MultipartWriter
-
+from . import queries
 from .auth import AbstractTNSEAuth
-from .const import DEFAULT_BASE_URL, DEFAULT_API_VERSION
-from .exceptions import RequiredApiParamNotFound
-from .helpers import get_region
 
 
 class TNSEApi:
     """Class to communicate with the TNS-Energo API."""
-    VERSION: Final[str] = DEFAULT_API_VERSION
-    _api_url: str
+    _auth: AbstractTNSEAuth
 
-    def __init__(self, auth: AbstractTNSEAuth):
+    def __init__(self, auth: AbstractTNSEAuth) -> None:
         """Initialize the API and store the auth."""
         self._auth = auth
-        self._api_url = f"{DEFAULT_BASE_URL}/version/{self.VERSION}/Android/mobile"
 
-    async def _async_get(self, url: str) -> Union[dict[str, Any], list[dict[str, Any]]]:
-        """Make async get request to api endpoint"""
-        return await self._auth.request(hdrs.METH_GET, f"{self._api_url}/{url}")
+    async def async_get_client_info(self) -> dict[str, Any]:
+        """Get client data."""
+        return await self.async_get_client_info_v2()
+        
+    async def async_get_client_info_v2(self) -> dict[str, Any]:
+        """Get client data V2."""
+        query = queries.ClientV2()
+        return await self._auth.async_request(query)
+        
+    async def async_get_accounts(self) -> dict[str, Any]:
+        """Get accounts data."""
+        query = queries.Accounts()
+        return await self._auth.async_request(query)
 
-    async def _async_post(self, url: str, **kwargs) -> Union[dict[str, Any], list[dict[str, Any]]]:
-        """Make async get request to api endpoint"""
-        with MultipartWriter("form-data", boundary=str(uuid.uuid1())) as mpwriter:
-            for name in kwargs:
-                part = mpwriter.append_json(kwargs[name])
-                part.set_content_disposition("form-data", name=name)
-                part.headers[hdrs.CONTENT_TRANSFER_ENCODING] = "binary"
-                part.headers[hdrs.CONTENT_TYPE] = "multipart/form-data; charset=utf-8"
-            return await self._auth.request(hdrs.METH_POST, f"{self._api_url}/{url}", data=mpwriter)
+    async def async_get_els_info(self, els_id: int) -> dict[str, Any]:
+        """
+        Get information about els account.
+        :param els_id: els account identifier
+        :return: els account information
+        """
+        query = queries.ElsInfo(els_id)
+        return await self._auth.async_request(query)
 
-    async def async_is_registered(self, account: str) -> dict[str, Any]:
-        """Check if account is registered."""
-        region = get_region(account)
-        _url = f"region/{region}/action/isLsRegisteredAndHasPayments/{account}/"
-        return await self._async_get(_url)
+    async def async_get_lspu_info(self, lspu_id: int) -> dict[str, Any]:
+        """
+        Get information about lspu account.
+        :param lspu_id: lspu account identifier
+        :return: lspu account information
+        """
+        query = queries.LspuInfo(lspu_id)
+        return await self._auth.async_request(query)
 
-    async def async_get_account_status(self, account: str) -> dict[str, Any]:
-        """Get account status."""
-        _url = f"delegation/getLsStatus/{account}/"
-        return await self._async_get(_url)
+    async def async_get_charges(self, lspu_id: int) -> dict[str, Any]:
+        """
+        Get charges data for account.
+        :param lspu_id: lspu account identifier
+        :return: charges data
+        """
+        query = queries.Charges(lspu_id)
+        return await self._auth.async_request(query)
 
-    async def async_get_accounts(self, account: str) -> dict[str, Any]:
-        """Get accounts for master account."""
-        _url = f"delegation/getLSListByLs/{account}/"
-        data = {"for_ls": account, "dlogin": 0}
-        return await self._async_post(_url, data=data)
+    async def async_get_payments(self, lspu_id: int) -> dict[str, Any]:
+        """
+        Get payments data for account.
+        :param lspu_id: lspu account identifier
+        :return: payments data
+        """
+        query = queries.Payments(lspu_id)
+        return await self._auth.async_request(query)
 
-    async def async_get_main_page_info(self, account: str) -> dict[str, Any]:
-        """Get main page for account."""
-        region = get_region(account)
-        _url = f"region/{region}/action/getMainPage/ls/{account}/json/"
-        return await self._async_get(_url)
+    async def async_get_receipt(self, date_iso_short: str, email: str,
+                                account_id: int, is_els: bool) -> dict[str, Any]:
+        """
+        Get receipt data for account.
+        :param date_iso_short: date in ISO short format (YYYY-MM-DD)
+        :param email: email to send receipt
+        :param account_id: account id (els_id or lspu_id)
+        :param is_els: is els account
+        :return: receipt data
+        """
 
-    async def async_get_general_info(self, account: str) -> dict[str, Any]:
-        """Get general info about account."""
-        region = get_region(account)
-        _url = f"region/{region}/action/getInfo/ls/{account}/json/"
-        return await self._async_get(_url)
+        query = queries.Receipt(date_iso_short, email, account_id, is_els)
+        return await self._auth.async_request(query)
 
-    async def async_get_readings_history(self, account: str) -> dict[str, Any]:
-        """Get readings history for account."""
-        region = get_region(account)
-        _url = f"region/{region}/action/getReadingsHistPage/ls/{account}/json/"
-        return await self._async_get(_url)
-
-    async def async_get_current_payment(self, account: str) -> dict[str, Any]:
-        """Get current balance for account."""
-        region = get_region(account)
-        _url = f"region/{region}/action/getPaymentPage/ls/{account}/json/"
-        return await self._async_get(_url)
-
-    async def async_get_payments_history(self, account: str) -> dict[str, Any]:
-        """Get payments history for account."""
-        region = get_region(account)
-        _url = f"region/{region}/action/getPaymentsHistPage/ls/{account}/json/"
-        return await self._async_get(_url)
-
-    async def async_get_bill(self, account: str, dt: date) -> dict[str, Any]:
-        """Get general info about account."""
-        region = get_region(account)
-        _url = f"region/{region}/action/getBill/ls/{account}/date/{dt:%d.%m.%Y}/json/"
-        return await self._async_get(_url)
-
-    async def async_get_latest_readings(self, account: str) -> dict[str, Any]:
-        """Get last readings for account."""
-        region = get_region(account)
-        _url = f"region/{region}/action/getSendReadingsPage/ls/{account}/json/"
-        return await self._async_get(_url)
-
-    async def async_send_readings(self, account: str, readings: list[dict[str, Any]]) -> dict[str, Any]:
-        region = get_region(account)
-        _url = f"region/{region}/action/sendReadings/ls/{account}/json/"
-        if not readings:
-            raise RequiredApiParamNotFound("Required API 'readings' parameter not found")
-        return await self._async_post(_url, readings=readings)
-
-    async def async_get_authorization(self, account: str, password: str) -> dict[str, Any]:
-        """Get authorization token"""
-        region = get_region(account)
-        _url = f"region/{region}/action/authorization/json/"
-        data = {"ls": account, "password": password}
-        return await self._async_post(_url, data=data)
+    async def async_indication_send(self, lspu_id: int, equipment_uuid: str, value: int | float,
+                                    els_id: int | None = None) -> list[dict[str, Any]]:
+        """
+        Send indication for account.
+        :param lspu_id: lspu account identifier
+        :param equipment_uuid: equipment uuid (counter)
+        :param value: indication value
+        :param els_id: els account identifier (optional)
+        :return: indication data
+        """
+        query = queries.IndicationSend(lspu_id, equipment_uuid, value, els_id)
+        return await self._auth.async_request(query)
