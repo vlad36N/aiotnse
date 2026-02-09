@@ -12,7 +12,9 @@ class TNSEAuthError(TNSEApiError):
 
 class RegionNotFound(TNSEApiError):
     """Region for account number are not found"""
-
+    
+class MyGasApiParseError(TNSEApiError):
+    """Exception class for aiotaipit parsing errors"""
 
 class RequiredApiParamNotFound(TNSEApiError):
     """Required API parameter not found"""
